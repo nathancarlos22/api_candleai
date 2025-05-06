@@ -11,18 +11,29 @@ def home():
 
 @app.get("/predict")
 def predict():
-    # 1. Coleta dados da Binance
-    response = requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=60")
+    url = "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=60"
+    response = requests.get(url)
+
+    if response.status_code != 200:
+        return {"error": "Falha ao buscar dados da Binance", "status_code": response.status_code}
+
     candles = response.json()
-    
-    closes = [float(c[4]) for c in candles]
-    last = closes[-1]
-    prev = closes[-2]
-    
-    # 2. Exemplo com 2 classes
+
+    if not candles or not isinstance(candles, list):
+        return {"error": "Dados inválidos recebidos da Binance"}
+
+    try:
+        closes = [float(c[4]) for c in candles]
+        last = closes[-1]
+        prev = closes[-2]
+    except Exception as e:
+        return {"error": f"Erro ao processar candles: {str(e)}"}
+
+    # Simular duas classes (para evitar erro do modelo)
     X = [[prev, last], [last, prev]]
     y = [1, 0]
 
+    from sklearn.ensemble import RandomForestClassifier
     model = RandomForestClassifier()
     model.fit(X, y)
     prob = model.predict_proba([[last, last]])[0][1]
